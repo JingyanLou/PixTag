@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Upload to AWS S3</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .file-input {
+            margin-bottom: 20px;
+        }
+        .file-input input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .upload-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+        }
+        .upload-button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Upload Image to AWS S3</h2>
+        <div class="file-input">
+            <input type="file" id="fileInput">
+        </div>
+        <button class="upload-button" onclick="uploadImage()">Upload</button>
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = "Uploading...";
+
+            try {
+                // Step 1: Get a signed URL from your backend server
+                const response = await fetch('/getSignedUrl', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ fileName: file.name, fileType: file.type })
+                });
+                const { signedUrl, s3Url } = await response.json();
+
+                // Step 2: Upload the file to S3 using the signed URL
+                const uploadResponse = await fetch(signedUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                if (uploadResponse.ok) {
+                    messageDiv.textContent = "Upload successful!";
+                    
+                    // Optional: Notify your backend that the upload is complete
+                    await fetch('/notifyUpload', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ s3Url })
+                    });
+
+                    // Step 3: Optionally, trigger a Lambda function (handled by S3 event notifications)
+                    console.log('File uploaded to S3:', s3Url);
+                } else {
+                    throw new Error('Upload failed');
+                }
+            } catch (error) {
+                console.error('Error uploading file:', error);
+                messageDiv.textContent = "Upload failed. Please try again.";
+            }
+        }
+    </script>
+</body>
+</html>
