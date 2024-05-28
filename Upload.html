@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,26 +9,64 @@
         body {
             font-family: Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 0;
             background-color: #f4f4f4;
         }
+
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        .navbar a {
+            float: left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
         .container {
             max-width: 600px;
-            margin: 0 auto;
+            margin: 20px auto;
             padding: 20px;
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
+
         .file-input {
             margin-bottom: 20px;
+            align-items: center;
+            display: flex;
+            flex-direction: column;
+
         }
+
         .file-input input {
             width: 100%;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 4px;
         }
+
+        .thumbnail {
+            display: none;
+            max-width: 100%;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
         .upload-button {
             display: block;
             width: 100%;
@@ -39,26 +78,62 @@
             cursor: pointer;
             text-align: center;
         }
+
         .upload-button:hover {
             background-color: #0056b3;
         }
+
         .message {
             margin-top: 20px;
             text-align: center;
         }
     </style>
 </head>
+
 <body>
-    <div class="container">
-        <h2>Upload Image to AWS S3</h2>
-        <div class="file-input">
-            <input type="file" id="fileInput">
+    <div class="navbar">
+        <a href="/upload.html">Upload</a>
+        <a href="/update.html">Update</a>
+        <a href="/search.html">Search</a>
+        <a href="/logout.html">Logout</a>
+    </div>
+
+    <div class="content">
+        <div class="container">
+            <h2>Upload Image to AWS S3</h2>
+
+            <div class="file-input">
+                <input type="file" id="fileInput" accept="image/*" onchange="previewImage()">
+            </div>
+
+            <img id="thumbnail" class="thumbnail" />
+
+            <button class="upload-button" onclick="uploadImage()">Upload</button>
+
+            <div class="message" id="message"></div>
+
         </div>
-        <button class="upload-button" onclick="uploadImage()">Upload</button>
-        <div class="message" id="message"></div>
     </div>
 
     <script>
+        function previewImage() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const thumbnail = document.getElementById('thumbnail');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    thumbnail.src = e.target.result;
+                    thumbnail.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                thumbnail.src = '';
+                thumbnail.style.display = 'none';
+            }
+        }
+
         async function uploadImage() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -92,7 +167,7 @@
 
                 if (uploadResponse.ok) {
                     messageDiv.textContent = "Upload successful!";
-                    
+
                     // Optional: Notify your backend that the upload is complete
                     await fetch('/notifyUpload', {
                         method: 'POST',
@@ -114,4 +189,5 @@
         }
     </script>
 </body>
+
 </html>
