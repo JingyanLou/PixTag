@@ -50,7 +50,6 @@
             align-items: center;
             display: flex;
             flex-direction: column;
-
         }
 
         .file-input input {
@@ -88,6 +87,7 @@
             text-align: center;
         }
     </style>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1004.0.min.js"></script>
 </head>
 
 <body>
@@ -101,26 +101,21 @@
     <div class="content">
         <div class="container">
             <h2>Upload Image to AWS S3</h2>
-
             <div class="file-input">
                 <input type="file" id="fileInput" accept="image/*" onchange="previewImage()">
             </div>
-
             <img id="thumbnail" class="thumbnail" />
-
             <button class="upload-button" onclick="uploadImage()">Upload</button>
-
             <div class="message" id="message"></div>
-
         </div>
     </div>
 
     <script>
+        //once user select a photo from local drive, display it
         function previewImage() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
             const thumbnail = document.getElementById('thumbnail');
-
             if (file) {
                 const reader = new FileReader();
                 reader.onload = function (e) {
@@ -134,6 +129,7 @@
             }
         }
 
+        //upload image to s3 bucket
         async function uploadImage() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
@@ -145,43 +141,31 @@
             const messageDiv = document.getElementById('message');
             messageDiv.textContent = "Uploading...";
 
+            // Configure the AWS SDK
+            AWS.config.update({
+                region: 'ap-southeast-2', // Your region
+                credentials: new AWS.CognitoIdentityCredentials({
+                    IdentityPoolId: 'ap-southeast-2:613d1319-d2c9-4519-822c-b7c0a36b41d8', // Your Cognito Identity Pool ID
+                }),
+            });
+
+            const s3 = new AWS.S3({
+                apiVersion: '2006-03-01',
+                params: { Bucket: 'assignment3image' } // Replace with your bucket name
+            });
+
+            const uploadParams = {
+                Bucket: 'assignment3image', // Replace with your bucket name
+                Key: file.name,
+                Body: file,
+                ContentType: file.type,
+                ACL: 'public-read', // Optional: Make the file public
+            };
+
             try {
-                // Step 1: Get a signed URL from your backend server
-                const response = await fetch('/getSignedUrl', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ fileName: file.name, fileType: file.type })
-                });
-                const { signedUrl, s3Url } = await response.json();
-
-                // Step 2: Upload the file to S3 using the signed URL
-                const uploadResponse = await fetch(signedUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': file.type
-                    },
-                    body: file
-                });
-
-                if (uploadResponse.ok) {
-                    messageDiv.textContent = "Upload successful!";
-
-                    // Optional: Notify your backend that the upload is complete
-                    await fetch('/notifyUpload', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ s3Url })
-                    });
-
-                    // Step 3: Optionally, trigger a Lambda function (handled by S3 event notifications)
-                    console.log('File uploaded to S3:', s3Url);
-                } else {
-                    throw new Error('Upload failed');
-                }
+                await s3.upload(uploadParams).promise();
+                messageDiv.textContent = "Upload successful!";
+                console.log('File uploaded successfully to S3.');
             } catch (error) {
                 console.error('Error uploading file:', error);
                 messageDiv.textContent = "Upload failed. Please try again.";
