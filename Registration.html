@@ -133,15 +133,15 @@
                     body: JSON.stringify({ username: email, password, email, firstname: firstName, lastname: lastName })
                 });
 
-                if (response.ok) {
-                    messageDiv.textContent = "Registration successful!";
+                const responseData = await response.json();
+
+                if (responseData.statusCode === 200) {
+                    messageDiv.textContent = responseData.body;
                     setTimeout(() => {
                         window.location.href = '/login.html';
                     }, 1000);
                 } else {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error);
-                    throw new Error('Registration failed');
+                    messageDiv.textContent = responseData.body || "Registration failed. Please try again.";
                 }
             } catch (error) {
                 console.error('Error registering user:', error);
