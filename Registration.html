@@ -134,14 +134,15 @@
                 });
 
                 const responseData = await response.json();
+                const body = JSON.parse(responseData.body);
 
                 if (responseData.statusCode === 200) {
-                    messageDiv.textContent = responseData.body;
+                    messageDiv.textContent = body.message;
                     setTimeout(() => {
                         window.location.href = '/login.html';
                     }, 1000);
                 } else {
-                    messageDiv.textContent = responseData.body || "Registration failed. Please try again.";
+                    messageDiv.textContent = body.error || "Registration failed. Please try again.";
                 }
             } catch (error) {
                 console.error('Error registering user:', error);
