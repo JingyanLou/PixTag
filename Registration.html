@@ -125,12 +125,12 @@
             messageDiv.textContent = "Registering...";
 
             try {
-                const response = await fetch('/register', {
+                const response = await fetch('https://wl6poops2l.execute-api.us-east-1.amazonaws.com/prod/api/signup', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({ email, firstName, lastName, password })
+                    body: JSON.stringify({ username: email, password, email, firstname: firstName, lastname: lastName })
                 });
 
                 if (response.ok) {
@@ -139,6 +139,8 @@
                         window.location.href = '/login.html';
                     }, 1000);
                 } else {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error);
                     throw new Error('Registration failed');
                 }
             } catch (error) {
