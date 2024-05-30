@@ -171,6 +171,65 @@
                 messageDiv.textContent = "Upload failed. Please try again.";
             }
         }
+
+        async function uploadImageWithToken() {
+            const fileInput = document.getElementById('fileInput');
+            const messageDiv = document.getElementById('message');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                messageDiv.textContent = 'Please select an image to upload.';
+                return;
+            }
+
+            // Get the authentication token from local storage
+            const authToken = localStorage.getItem('authToken');
+
+            if (!authToken) {
+                messageDiv.textContent = 'You must be logged in to upload an image.';
+                return;
+            }
+
+            // Send a request to your server to get a pre-signed URL
+            try {
+                const response = await fetch('https://your-server.com/get-presigned-url', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({ fileName: file.name, fileType: file.type })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to get pre-signed URL');
+                }
+
+                const { url, key } = await response.json();
+
+                // Upload the file to S3 using the pre-signed URL
+                const s3Response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': file.type
+                    },
+                    body: file
+                });
+
+                if (s3Response.ok) {
+                    messageDiv.textContent = 'Image uploaded successfully!';
+                    // Optionally, you can store the uploaded image URL in local storage or do other actions
+                    const imageUrl = `https://your-bucket-name.s3.amazonaws.com/${key}`;
+                    console.log('Uploaded image URL:', imageUrl);
+                } else {
+                    throw new Error('Failed to upload image to S3');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                messageDiv.textContent = 'Upload failed. Please try again.';
+            }
+        }
+
     </script>
 </body>
 
