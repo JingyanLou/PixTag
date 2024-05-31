@@ -158,11 +158,10 @@
                 };
 
                 console.log("Payload prepared:", payload);
-
                 console.log("authtication...", sessionStorage.getItem('authToken'))
                 console.log("username...", sessionStorage.getItem('username'))
 
-                const response = await fetch("https://wylegln4zc.execute-api.us-east-1.amazonaws.com/teststage/uploads", {
+                const response = await fetch("https://17dz63iawf.execute-api.us-east-1.amazonaws.com/prob/uploadtos3", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -170,6 +169,8 @@
                     },
                     body: JSON.stringify(payload)
                 });
+
+                console.log("payload...", payload)
 
                 console.log("Request sent to the server, awaiting response...");
 
