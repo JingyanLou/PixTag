@@ -129,107 +129,63 @@
             }
         }
 
-        //upload image to s3 bucket
+        async function toBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+            });
+        }
+
         async function uploadImage() {
             const fileInput = document.getElementById('fileInput');
             const file = fileInput.files[0];
             if (!file) {
-                alert("Please select a file to upload.");
+                alert('Please select a file first.');
                 return;
             }
-
-            const messageDiv = document.getElementById('message');
-            messageDiv.textContent = "Uploading...";
-
-            // Configure the AWS SDK
-            AWS.config.update({
-                region: 'ap-southeast-2', // Your region
-                credentials: new AWS.CognitoIdentityCredentials({
-                    IdentityPoolId: 'ap-southeast-2:613d1319-d2c9-4519-822c-b7c0a36b41d8', // Your Cognito Identity Pool ID
-                }),
-            });
-
-            const s3 = new AWS.S3({
-                apiVersion: '2006-03-01',
-                params: { Bucket: 'assignment3image' } // Replace with your bucket name
-            });
-
-            const uploadParams = {
-                Bucket: 'assignment3image', // Replace with your bucket name
-                Key: file.name,
-                Body: file,
-                ContentType: file.type,
-                ACL: 'public-read', // Optional: Make the file public
-            };
 
             try {
-                await s3.upload(uploadParams).promise();
-                messageDiv.textContent = "Upload successful!";
-                console.log('File uploaded successfully to S3.');
-            } catch (error) {
-                console.error('Error uploading file:', error);
-                messageDiv.textContent = "Upload failed. Please try again.";
-            }
-        }
+                console.log("Converting file to Base64...");
+                const base64String = await toBase64(file);
+                console.log("File converted to Base64 successfully.");
 
-        async function uploadImageWithToken() {
-            const fileInput = document.getElementById('fileInput');
-            const messageDiv = document.getElementById('message');
-            const file = fileInput.files[0];
+                const payload = {
+                    file: base64String,
+                    name: file.name,
+                    username: sessionStorage.getItem('username')
+                };
 
-            if (!file) {
-                messageDiv.textContent = 'Please select an image to upload.';
-                return;
-            }
+                console.log("Payload prepared:", payload);
 
-            // Get the authentication token from local storage
-            const authToken = localStorage.getItem('authToken');
+                console.log("authtication...", sessionStorage.getItem('authToken'))
+                console.log("username...", sessionStorage.getItem('username'))
 
-            if (!authToken) {
-                messageDiv.textContent = 'You must be logged in to upload an image.';
-                return;
-            }
-
-            // Send a request to your server to get a pre-signed URL
-            try {
-                const response = await fetch('https://your-server.com/get-presigned-url', {
+                const response = await fetch("https://wylegln4zc.execute-api.us-east-1.amazonaws.com/teststage/uploads", {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
+                        'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
                     },
-                    body: JSON.stringify({ fileName: file.name, fileType: file.type })
+                    body: JSON.stringify(payload)
                 });
+
+                console.log("Request sent to the server, awaiting response...");
 
                 if (!response.ok) {
-                    throw new Error('Failed to get pre-signed URL');
+                    throw new Error("Uploading failed, please retry.");
                 }
 
-                const { url, key } = await response.json();
+                const data = await response.json();
+                console.log("Response from server:", data);
 
-                // Upload the file to S3 using the pre-signed URL
-                const s3Response = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': file.type
-                    },
-                    body: file
-                });
-
-                if (s3Response.ok) {
-                    messageDiv.textContent = 'Image uploaded successfully!';
-                    // Optionally, you can store the uploaded image URL in local storage or do other actions
-                    const imageUrl = `https://your-bucket-name.s3.amazonaws.com/${key}`;
-                    console.log('Uploaded image URL:', imageUrl);
-                } else {
-                    throw new Error('Failed to upload image to S3');
-                }
+                alert('Image uploaded successfully!');
             } catch (error) {
-                console.error('Error:', error);
-                messageDiv.textContent = 'Upload failed. Please try again.';
+                console.error('An error occurred while uploading the image:', error);
+                alert('An error occurred while uploading the image.');
             }
         }
-
     </script>
 </body>
 

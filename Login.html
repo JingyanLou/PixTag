@@ -88,9 +88,7 @@
     </div>
 
     <script>
-
         async function loginUser() {
-
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
@@ -98,7 +96,6 @@
             messageDiv.textContent = "Logging in...";
 
             try {
-                //send login information through post request
                 const response = await fetch('https://wl6poops2l.execute-api.us-east-1.amazonaws.com/prod/api/login', {
                     method: 'POST',
                     headers: {
@@ -107,20 +104,19 @@
                     body: JSON.stringify({ username: email, password })
                 });
 
-                //get response
                 const responseData = await response.json();
                 const body = JSON.parse(responseData.body);
 
-                //if authticated, direct to upload.html 
                 if (responseData.statusCode === 200) {
                     messageDiv.textContent = body.message;
                     setTimeout(() => {
-                        localStorage.setItem('authToken', body.token);
+                        sessionStorage.setItem('authToken', body.token);
+                        sessionStorage.setItem('username', email); // Store username in sessionStorage
                         window.location.href = '/upload.html';
                     }, 1000);
-                } else if (responseData.statusCode === 401) { //not authorized 401:Unauthroized 
+                } else if (responseData.statusCode === 401) {
                     messageDiv.textContent = body.error;
-                } else if (responseData.statusCode === 403) { //no permission 403:forbidden
+                } else if (responseData.statusCode === 403) {
                     messageDiv.textContent = body.error;
                 } else {
                     throw new Error(responseData.error || 'Login failed');
@@ -130,9 +126,7 @@
                 messageDiv.textContent = "Login failed. Please try again.";
             }
         }
-
     </script>
-
 </body>
 
 </html>
