@@ -1,0 +1,141 @@
+<!DOCTYPE  html>
+<html lang="en">
+
+<head>
+    <meta charset = "UTF-8">
+    <meta name = "viewport" content = "width=device-width, initial-scale = 1.0">
+    <title>Image Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin:  0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .navbar {
+            overflow: hidden;
+            background-color: #333;
+        }
+
+        .navbar a {
+            float:    left;
+            display: block;
+            color: white;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+        }
+
+        .navbar a:hover {
+            background-color: #ddd;
+            color: black;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .container {
+            max-width:  600px;
+            margin: 20px auto;
+            padding:     20px;
+            background-color: #fff;
+            border-radius:       8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group input {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .search-button {
+            display: block;
+            width:   100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border:  none;
+            border-radius: 4px;
+            cursor:    pointer;
+            text-align: center;
+        }
+
+        .search-button:hover {
+            background-color: #0056b3;
+        }
+
+        .results {
+                margin-top: 20px;
+        }
+
+        .result-item {
+            margin-bottom: 10px;
+        }
+    </style>
+    <script>
+        async function searchImages() {
+            const tags    = document.getElementById('tagsInput').value;
+            const tagList = tags.split(',').map(tag => {
+                const [name, count] = tag.split(':').map(item => item.trim());
+                return `${name}, ${count}`;
+            });
+
+            console.log("authtication:", sessionStorage.getItem('authToken'))
+            console.log("TagLists:"   ,  tags)
+
+            const response = await fetch('https://yb4mbaxjs4.execute-api.us-east-1.amazonaws.com/a3_testing2/Search', //Replace with AWS Search endpoint 
+            {
+                method: 'POST',
+                headers: {
+                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
+                },
+                body: JSON.stringify({ tags: tagList })
+            });
+            const data = await response.json();
+            displayResults(data.links);
+        }
+
+        function displayResults(links) {
+            const resultsDiv     = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+
+            links.forEach(link => {
+                const imgElement = document.createElement('img');
+                imgElement.src = link;
+                imgElement.className = 'result-item';
+                resultsDiv.appendChild(imgElement);
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <div class="navbar">
+        <a href="/upload.html">Upload</a>
+        <a href="/update.html">Update</a>
+        <a href="/search.html">Search</a>
+        <a href="/logout.html">Logout</a>
+    </div>
+
+    <div class="content">
+        <div class="container">
+            <h2>Search Images by Tags</h2>
+            <div class="input-group">
+                <input type="text" id="tagsInput" placeholder="Please enter tags and counts (I.e. 'person:2, desk:1, cat:3')">
+            </div>
+            <button class="search-button" onclick="searchImages()">Search</button>
+            <div class="results" id="results"></div>
+        </div>
+    </div>
+</body>
+
+</html>
