@@ -2,6 +2,8 @@ import json
 import base64
 import boto3
 import os
+import cv2
+import numpy as np
 
 s3_client = boto3.client('s3')
 s3_resource = boto3.resource('s3')
@@ -22,6 +24,15 @@ def configure_bucket_notification(bucket_name):
         }
     )
     return response
+    
+def create_thumbnail(image_data, max_size=(128, 128)):
+    
+    nparr = np.frombuffer(image_data, np.uint8)
+    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+    
+    thumbnail = cv2.resize(img, max_size, interpolation=cv2.INTER_AREA)
+    _, buffer = cv2.imencode('.jpg', thumbnail)
+    return buffer.tobytes()
 
 def lambda_handler(event, context):
     print("Lambda function has started execution.")
@@ -64,6 +75,20 @@ def lambda_handler(event, context):
         print("Uploading image to S3.")
         s3_client.put_object(Bucket=BUCKET_NAME, Key=s3_key, Body=image_data, Metadata={'username': username})
         print("Image uploaded to S3 successfully.")
+        
+        # Generate thumbnail
+        print("Generating thumbnail.")
+        thumbnail_data = create_thumbnail(image_data)
+        print("Thumbnail generated successfully.")
+
+        # Create the S3 key for thumbnail
+        thumbnail_s3_key = f'thumbnails/{username}/{image_name}'
+        print(f"Thumbnail S3 key created: {thumbnail_s3_key}")
+
+        # Upload the thumbnail to S3
+        print("Uploading thumbnail to S3.")
+        s3_client.put_object(Bucket=BUCKET_NAME, Key=thumbnail_s3_key, Body=thumbnail_data, Metadata={'username': username})
+        print("Thumbnail uploaded to S3 successfully.")
 
         # Configure bucket notification for the image detection Lambda function
         configure_bucket_notification(BUCKET_NAME)

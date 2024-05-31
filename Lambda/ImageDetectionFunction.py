@@ -92,6 +92,12 @@ def lambda_handler(event, context):
             # Decode the key
             key = urllib.parse.unquote(key)
             print(f"Decoded S3 key: {key}")
+            
+            # Skip processing if the key indicates a thumbnail
+            if key.startswith('thumbnails/'):
+                print(f"Skipping thumbnail image: {key}")
+                continue
+            
             s3_time = time.time()
             
             # Get the image from S3
@@ -126,13 +132,17 @@ def lambda_handler(event, context):
             metadata = s3_response.get('Metadata', {})
             username = metadata.get('username')
             
+            # Generate the thumbnail S3 URL
+            thumbnail_s3_url = f"https://{bucket}.s3.amazonaws.com/thumbnails/{username}/{os.path.basename(key)}"
+            
             # Save detections to DynamoDB
             dynamodb.put_item(
                 TableName='ImageLabels', # dynamodb table name
                 Item={
                     'ImageKey': {'S': image_uuid}, 
-                    'S3URL': {'S': s3_url},
-                    'S3Path': {'S': key},
+                    'S3ImageURL': {'S': s3_url},
+                    'S3ImagePath': {'S': key},
+                    'ThumbnailURL': {'S': thumbnail_s3_url},
                     'Tags': {'S': json.dumps(tags)},
                     'UserName': {'S': username}
                 }
