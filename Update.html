@@ -138,7 +138,8 @@
         <a href="/upload.html">Upload</a>
         <a href="/update.html">Update</a>
         <a href="/search.html">Search</a>
-        <a href="/logout.html">Logout</a>
+        <a href="/subscribe.html">Subscribe</a>
+        <a href="/login.html">Logout</a>
     </div>
 
     <div class="content">
@@ -155,7 +156,7 @@
                                 "https://pixtag.s3.amazonaws.com/image60-thumb.png",
                                 "https://pixtag.s3.amazonaws.com/image23-thumb.png"],
                                 "type": 1, /* 1 for add and 0 for remove */
-                                "tags": ["person","alex"]}'></textarea>                            
+                                "tags": ["person","alex"]}'></textarea>
                     <button class="update-button" onclick="updateTags()">Update Tags</button>
                 </div>
             </div>
@@ -188,7 +189,7 @@
 
         async function updateTags() {
             const jsonInput = document.getElementById('jsonInput').value;
-            
+
             if (!jsonInput) {
                 alert('Please enter a JSON message.');
                 return;
@@ -226,7 +227,7 @@
 
         async function deleteImages() {
             const deleteUrls = document.getElementById('deleteUrls').value;
-            
+
             if (!deleteUrls) {
                 alert('Please enter URLs to delete.');
                 return;

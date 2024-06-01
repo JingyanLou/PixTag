@@ -159,19 +159,22 @@
         <a href="/upload.html">Upload</a>
         <a href="/update.html">Update</a>
         <a href="/search.html">Search</a>
-        <a href="/logout.html">Logout</a>
+        <a href="/subscribe.html">Subscribe</a>
+        <a href="/login.html">Logout</a>
     </div>
 
     <div class="content">
         <div class="container">
             <div class="tabs">
-                <button class="tablinks" onclick="openTab(event, 'searchByTags')" id="defaultOpen">Search by Tags</button>
+                <button class="tablinks" onclick="openTab(event, 'searchByTags')" id="defaultOpen">Search by
+                    Tags</button>
                 <button class="tablinks" onclick="openTab(event, 'searchByUrl')">Search by URL</button>
             </div>
 
             <div id="searchByTags" class="tabcontent">
                 <div class="search-input">
-                    <input type="text" id="searchQuery" placeholder="Enter tags and minimum count (e.g., person: 2, car: 1)">
+                    <input type="text" id="searchQuery"
+                        placeholder="Enter tags and minimum count (e.g., person: 2, car: 1)">
                     <button class="search-button" onclick="searchImages()">Search by Tags</button>
                 </div>
                 <div class="thumbnails" id="thumbnails"></div>
