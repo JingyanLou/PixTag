@@ -80,6 +80,11 @@ nmsthres = 0.1
 s3 = boto3.client('s3')
 dynamodb = boto3.client('dynamodb')
 
+#sns
+sns = boto3.client('sns')
+TOPIC_ARN = "" # enter your sns topic arn here 
+
+
 def lambda_handler(event, context):
     detection_results = []
     start_time = time.time()
@@ -148,10 +153,37 @@ def lambda_handler(event, context):
                 }
             )
 
+             #for each tag detected in the image, send a sns notification to that topic => 
+            for tag in tags:
+                message = f"{username} uploaded image with tags {', '.join(tags)}"
+                try:
+                    sns.publish(
+                        TopicArn=TOPIC_ARN,
+                        Message=message,
+                        Subject="New Image",
+                        MessageAttributes={
+                            'tag': {
+                                'DataType': 'String',
+                                'StringValue': tag
+                            },
+                            'username': {
+                                'DataType': 'String',
+                                'StringValue': username
+                            }
+                        }
+                    )
+                    print(f"Published message for tag {tag}")
+                except Exception as e:
+                    print(f"Error publishing message for tag {tag}: {str(e)}")
+
+    
+
             print(f"Detected objects for image {key}: {json.dumps(prediction_res)}")
             print(f"Time to get image from S3: {s3_time - start_time}")
             print(f"Time to decode image: {image_decode_time - s3_time}")
             print(f"Time to perform detection: {detection_time - image_decode_time}")
+
+
 
         return {
             'statusCode': 200,
