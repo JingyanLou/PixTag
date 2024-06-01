@@ -1,60 +1,53 @@
 import json
 import boto3
-from   boto3.dynamodb.conditions import Attr
 
+dynamodb = boto3.client('dynamodb')
+DB_NAME  = 'ImageLabels'
 
 def lambda_handler(event, context):
-    try:
-        # Parsing incoming JSON request
-        body = json.loads(event['body'])
-        tags = body['tags']
+    body = json.loads(event['body'])
+    query = body['query']
+    tag_requirements = parse_query(query)
+    
+    response = dynamodb.scan(TableName=DB_NAME)
+    items = response['Items']
+    
+    results = []
+    for item in items:
+        try:
+            item_tags_str = item['Tags']['S']
+            item_tags = json.loads(item_tags_str)
+        except json.JSONDecodeError as e:
+            print(f"Error decoding JSON for item {item['ImageKey']['S']}: {e}")
+            continue
         
-        # Generates a tag dictionary 
-        tag_dict = {}
-        for tag in tags:
-            try:
-                name, count = tag.split(',')
-                tag_dict[name.strip()] = int(count.strip())
-            except ValueError as e:
-                return {
-                    'statusCode': 400,
-                    'body': json.dumps({'error': f'Invalid tag format: {tag}. Expected format "tag1:count, tag2:count".'}),
-                    'headers': {
-                        'Content-Type': 'application/json',
-                        'Access-Control-Allow-Origin': '*'}
-                        }
-        
-        # Initialize DynamoDB client
-        dynamodb =  boto3.resource('dynamodb')
-        table    = dynamodb.Table('ImageTags')
-        
-        # Scan the table and filter items manually
-        response = table.scan()
-        items    = response['Items']
-        
-        # Filter the items based on the tag counts
-        filtered_items = []
-        for item in items:
-            tag_counts = {tag: item['tags'].count(tag) for tag in tag_dict.keys()}
-            if all(tag_counts[tag] >= tag_dict[tag]    for tag in tag_dict.keys()):
-                filtered_items.append(item['imageUrl'])
-        
-        return {
-            'statusCode': 200,
-            'body': json.dumps({'links': filtered_items}),
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'OPTIONS, POST',
-                'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'}
-        }
-
-    except Exception as e:
-        return {
-            'statusCode': 500,
-            'body': json.dumps({'error': str(e)}),
+        if check_tag_requirements(item_tags, tag_requirements):
+            results.append({
+                'thumbnail': item['ThumbnailURL']['S'],
+                'fullsize': item['S3ImageURL']['S']
+            })
+    
+    return {
+        'statusCode': 200,
+        'body': json.dumps({'links': results}),
         'headers': {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'OPTIONS, POST',
-            'Access-Control-Allow-Headers': 'Content-Type, X-Amz-Date, Authorization, X-Api-Key, X-Amz-Security-Token'
-            } 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
         }
+    }
+
+def parse_query(query):
+    tags = query.split(', ')
+    tag_requirements = {}
+    for tag_count in tags:
+        tag, count = tag_count.split(': ')
+        tag_requirements[tag.strip()] = int(count.strip())
+    return tag_requirements
+
+
+def check_tag_requirements(item_tags, tag_requirements):
+    tag_counts = {tag: item_tags.count(tag) for tag in tag_requirements}
+    for tag, required_count in tag_requirements.items():
+        if tag_counts.get(tag, 0) < required_count:
+            return False
+    return True
