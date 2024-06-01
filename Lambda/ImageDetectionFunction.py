@@ -6,7 +6,7 @@ import cv2
 import os
 import urllib.parse
 import time
-import uuid 
+import uuid
 
 # Path for YOLO configuration files in Lambda Layer
 yolo_path = "/opt/yolo_tiny_configs"
@@ -82,8 +82,7 @@ dynamodb = boto3.client('dynamodb')
 
 #sns
 sns = boto3.client('sns')
-TOPIC_ARN = "" # enter your sns topic arn here 
-
+TOPIC_ARN = "arn:aws:sns:us-east-1:261491978824:Tag" # enter your sns topic arn here 
 
 def lambda_handler(event, context):
     detection_results = []
@@ -95,19 +94,24 @@ def lambda_handler(event, context):
             key = record['s3']['object']['key']
             
             # Decode the key
-            key = urllib.parse.unquote(key)
-            print(f"Decoded S3 key: {key}")
+            print(f"original S3 key is : {key}")
+            decoded_key = urllib.parse.unquote(key)
+            print(f"Decoded S3 key is : {decoded_key}")
             
             # Skip processing if the key indicates a thumbnail
-            if key.startswith('thumbnails/'):
-                print(f"Skipping thumbnail image: {key}")
+            if decoded_key.startswith('thumbnails/'):
+                print(f"Skipping thumbnail image: {decoded_key}")
                 continue
             
             s3_time = time.time()
             
             # Get the image from S3
-            s3_response = s3.get_object(Bucket=bucket, Key=key)
-            image_data = s3_response['Body'].read()
+            try:
+                s3_response = s3.get_object(Bucket=bucket, Key=decoded_key)
+                image_data = s3_response['Body'].read()
+            except Exception as e:
+                print(f"Error getting object {decoded_key} from bucket {bucket}: {str(e)}")
+                continue
             
             # Decode the image
             nparr = np.frombuffer(image_data, np.uint8)
@@ -120,7 +124,7 @@ def lambda_handler(event, context):
             detection_time = time.time()
             
             detection_results.append({
-                "image": key,
+                "image": decoded_key,
                 "detections": prediction_res
             })
             
@@ -128,17 +132,20 @@ def lambda_handler(event, context):
             image_uuid = str(uuid.uuid4())
             
             # Construct the S3 URL
-            s3_url = f"https://{bucket}.s3.amazonaws.com/{key}"
+            s3_url = f"https://{bucket}.s3.amazonaws.com/{urllib.parse.quote(decoded_key)}"
+            print("s3 url: ", s3_url)
             
             # Extract labels from prediction results
             tags = [pred['label'] for pred in prediction_res]
             
             # Get metadata
             metadata = s3_response.get('Metadata', {})
-            username = metadata.get('username')
+            username = metadata.get('username', 'unknown')  # Handle missing username
             
             # Generate the thumbnail S3 URL
-            thumbnail_s3_url = f"https://{bucket}.s3.amazonaws.com/thumbnails/{username}/{os.path.basename(key)}"
+            thumbnail_s3_key = f"thumbnails/{urllib.parse.quote(username)}/{os.path.basename(decoded_key)}"
+            print(f"Decoded thumbnail key is : {thumbnail_s3_key}")
+            thumbnail_s3_url = f"https://{bucket}.s3.amazonaws.com/{urllib.parse.quote(thumbnail_s3_key)}"
             
             # Save detections to DynamoDB
             dynamodb.put_item(
@@ -146,16 +153,16 @@ def lambda_handler(event, context):
                 Item={
                     'ImageKey': {'S': image_uuid}, 
                     'S3ImageURL': {'S': s3_url},
-                    'S3ImagePath': {'S': key},
+                    'S3ImagePath': {'S': decoded_key},
                     'ThumbnailURL': {'S': thumbnail_s3_url},
                     'Tags': {'S': json.dumps(tags)},
                     'UserName': {'S': username}
                 }
             )
 
-             #for each tag detected in the image, send a sns notification to that topic => 
+             # For each tag detected in the image, send a sns notification to that topic
             for tag in tags:
-                message = f"{username} uploaded image with tags {', '.join(tags)}"
+                message = f"{username} uploaded image with tags ['{', '.join(tags)}']"
                 try:
                     sns.publish(
                         TopicArn=TOPIC_ARN,
@@ -176,14 +183,10 @@ def lambda_handler(event, context):
                 except Exception as e:
                     print(f"Error publishing message for tag {tag}: {str(e)}")
 
-    
-
-            print(f"Detected objects for image {key}: {json.dumps(prediction_res)}")
+            print(f"Detected objects for image {decoded_key}: {json.dumps(prediction_res)}")
             print(f"Time to get image from S3: {s3_time - start_time}")
             print(f"Time to decode image: {image_decode_time - s3_time}")
             print(f"Time to perform detection: {detection_time - image_decode_time}")
-
-
 
         return {
             'statusCode': 200,

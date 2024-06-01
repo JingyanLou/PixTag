@@ -5,7 +5,10 @@ dynamodb = boto3.client('dynamodb')
 DB_NAME  = 'ImageLabels'
 
 def lambda_handler(event, context):
-    body = json.loads(event['body'])
+    if isinstance(event['body'], str):
+        body = json.loads(event['body'])
+    else:
+        body = event['body']
     query = body['query']
     tag_requirements = parse_query(query)
     
