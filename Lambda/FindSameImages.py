@@ -1,7 +1,7 @@
 import json
 import boto3
 # Object Detection py from assignment 1st 
-from   ImageDetection_Imports import obj_detect
+from   image_detection_import import obj_detect
 
 DB_NAME  = 'ImageLabels'
 dynamodb = boto3.client('dynamodb')

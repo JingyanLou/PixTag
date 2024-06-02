@@ -141,7 +141,7 @@
             const messageDiv = document.getElementById('message');
 
             try {
-                const response = await fetch(`https://wl6poops2l.execute-api.us-east-1.amazonaws.com/prod/api/getsubscriptions?username=${username}`, {
+                const response = await fetch(`https://wl6poops2l.execute-api.us-east-1.amazonaws.com/prod/api/getSubscriptions?username=${username}`, {
                     method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${sessionStorage.getItem('authToken')}`
