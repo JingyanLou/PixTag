@@ -5,31 +5,27 @@ dynamodb = boto3.client('dynamodb')
 DB_NAME  = 'ImageLabels'
 
 def lambda_handler(event, context):
+    # Parsing tags sent by clients 
     if isinstance(event['body'], str):
         body = json.loads(event['body'])
     else:
         body = event['body']
-    query = body['query']
-    tag_requirements = parse_query(query)
+    query        = body['query']
+    quested_tags = parse_query(query)
     
-    response = dynamodb.scan(TableName=DB_NAME)
-    items = response['Items']
+    # Retriving all items from DynamoDB
+    response = dynamodb.scan(TableName = DB_NAME)
+    items    = response['Items']
     
-    results = []
+    results  = []  
     for item in items:
-        try:
-            item_tags_str = item['Tags']['S']
-            item_tags = json.loads(item_tags_str)
-        except json.JSONDecodeError as e:
-            print(f"Error decoding JSON for item {item['ImageKey']['S']}: {e}")
-            continue
-        
-        if check_tag_requirements(item_tags, tag_requirements):
+        item_tags     = json.loads(item['Tags']['S'])    
+        # Store both thumbnail and full image URLs.
+        if check_tag_requirements(item_tags, quested_tags):
             results.append({
-                'thumbnail': item['ThumbnailURL']['S'],
-                'fullsize': item['S3ImageURL']['S']
+                'fullsize' :   item['S3ImageURL']['S'],
+                'thumbnail': item['ThumbnailURL']['S']
             })
-    
     return {
         'statusCode': 200,
         'body': json.dumps({'links': results}),
@@ -39,18 +35,23 @@ def lambda_handler(event, context):
         }
     }
 
+# Parsing query and stored 'em in a dictionary 
+# Such as  {tag_1: count_1, tag_2: count_2...}
 def parse_query(query):
     tags = query.split(', ')
-    tag_requirements = {}
+    quested_tags  = {}
     for tag_count in tags:
-        tag, count = tag_count.split(': ')
-        tag_requirements[tag.strip()] = int(count.strip())
-    return tag_requirements
+        tag, count= tag_count.split(': ')
+        quested_tags[tag.strip()] = int(count.strip())
+    return quested_tags
 
 
-def check_tag_requirements(item_tags, tag_requirements):
-    tag_counts = {tag: item_tags.count(tag) for tag in tag_requirements}
-    for tag, required_count in tag_requirements.items():
-        if tag_counts.get(tag, 0) < required_count:
+# Validating if current item have all tags by required amount 
+def check_tag_requirements(item_tags, quested_tags):
+    tag_counts = {tag: item_tags.count(tag) 
+                   for tag in quested_tags}
+        
+    for tag, required_count in quested_tags.items():
+        if  tag_counts.get(tag, 0) < required_count:
             return False
     return True
