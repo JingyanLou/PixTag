@@ -18,7 +18,7 @@ PixTag is an AWS-based online system that allows users to upload images and perf
 
 Here is the system diagram:
 
-![System Diagram](Layer/systemdiagram.png)
+![System Diagram](Layers/systemdiagram.png)
 
 
 ## Technologies Used
