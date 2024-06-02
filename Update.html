@@ -122,6 +122,12 @@
         .form-button.delete:hover {
             background-color: #cc0000;
         }
+
+        .error-message {
+            color: red;
+            margin-top: 20px;
+            font-weight: bold;
+        }
     </style>
 </head>
 
@@ -159,6 +165,7 @@
                     <input type="text" id="tags" placeholder="Enter tags separated by commas">
                 </div>
                 <button class="form-button" onclick="updateTags()">Update Tags</button>
+                <div id="updateTagsError" class="error-message"></div>
             </div>
 
             <div id="deleteImages" class="tabcontent">
@@ -167,6 +174,7 @@
                     <textarea id="deleteUrls" placeholder="Enter image URLs to delete, separated by commas"></textarea>
                 </div>
                 <button class="form-button delete" onclick="deleteImages()">Delete Images</button>
+                <div id="deleteImagesError" class="error-message"></div>
             </div>
         </div>
     </div>
@@ -194,6 +202,9 @@
             const urls = document.getElementById('urls').value.split(',').map(url => url.trim());
             const actionType = document.getElementById('actionType').value;
             const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
+            const username = sessionStorage.getItem('username');  // Retrieve username from session storage
+            const errorElement = document.getElementById('updateTagsError');
+            errorElement.textContent = '';  // Clear previous error messages
 
             if (urls.length === 0 || tags.length === 0) {
                 alert('Please enter URLs and tags.');
@@ -203,7 +214,8 @@
             const payload = {
                 url: urls,
                 type: parseInt(actionType),
-                tags: tags
+                tags: tags,
+                username: username  // Include username in the payload
             };
 
             console.log("Prepared payload:", payload);
@@ -234,6 +246,9 @@
 
                 if (responseData && body.message) {
                     alert(body.message);
+                    if (body.message.includes('not authorized')) {
+                        errorElement.textContent = body.message;
+                    }
                 } else {
                     console.error('No message found in response');
                     alert('No message found in response.');
@@ -246,6 +261,9 @@
 
         async function deleteImages() {
             const deleteUrls = document.getElementById('deleteUrls').value.split(',').map(url => url.trim());
+            const username = sessionStorage.getItem('username');  // Retrieve username from session storage
+            const errorElement = document.getElementById('deleteImagesError');
+            errorElement.textContent = '';  // Clear previous error messages
 
             if (deleteUrls.length === 0) {
                 alert('Please enter URLs to delete.');
@@ -253,7 +271,8 @@
             }
 
             const payload = {
-                url: deleteUrls
+                url: deleteUrls,
+                username: username  // Include username in the payload
             };
 
             console.log("Prepared payload for deletion:", payload);
@@ -278,9 +297,16 @@
 
                 const responseData = await response.json();
                 console.log("Response from server:", responseData);
+                const body = JSON.parse(responseData.body);
+                console.log("Response from server:", responseData);
 
-                if (responseData && responseData.message) {
-                    alert(responseData.message);
+                console.log("body:", body);
+
+                if (responseData && body) {
+                    alert(body.message);
+                    if (body.message.includes('not authorized')) {
+                        errorElement.textContent = body.message;
+                    }
                 } else {
                     console.error('No message found in response');
                     alert('No message found in response.');

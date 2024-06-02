@@ -21,7 +21,20 @@ def lambda_handler(event, context):
     urls = body['url']
     action_type = body['type']
     tags = body['tags']
+    username = body.get('username')  # Add username to the request payload
     
+    if not username:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'message': 'Username not provided'}),
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+            }
+        }
+    
+    unauthorized_urls = []
+    deleted_any = False
     for url in urls:
         response = dynamodb.scan(
             TableName=DB_NAME,
@@ -35,11 +48,20 @@ def lambda_handler(event, context):
             continue
         
         item = items[0]
+        
+        if item['UserName']['S'] != username:
+            print(f"User {username} is not authorized to update tags for image uploaded by {item['UserName']['S']}")
+            unauthorized_urls.append(url)
+            continue
+        else:
+            deleted_any = True
+        
         current_tags = json.loads(item['Tags']['S'])
         
         if action_type == 1:  # Add tags
             for tag in tags:
-                current_tags.append(tag)
+                if tag not in current_tags:
+                    current_tags.append(tag)
         elif action_type == 0:  # Remove tags
             current_tags = [tag for tag in current_tags if tag not in tags]
         
@@ -50,9 +72,19 @@ def lambda_handler(event, context):
             ExpressionAttributeValues={':val': {'S': json.dumps(current_tags)}}
         )
     
+    if deleted_any:
+        if len(unauthorized_urls) < len(urls) and len(unauthorized_urls)!= 0:
+            message = f'Tags updated successfully, but user {username} is not authorized to update tags for the following URLs: {unauthorized_urls}'
+        elif len(unauthorized_urls) == len(urls):
+            message = f'User {username} is not authorized to update tags for the following URLs: {unauthorized_urls}'
+        else:
+            message = 'Tags updated successfully'
+    else:
+        message = 'No Tags updated'
+    
     response = {
         'statusCode': 200,
-        'body': json.dumps({'message': 'Tags updated successfully'}),
+        'body': json.dumps({'message': message}),
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*'
