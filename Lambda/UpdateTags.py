@@ -1,39 +1,44 @@
 import json
 import boto3
 
-dynamodb = boto3.client('dynamodb')
 DB_NAME  = 'ImageLabels'
+dynamodb = boto3.client('dynamodb')
+
 def lambda_handler(event, context):
     body = json.loads(event['body'])
-    urls = body['url']
-    action_type = body['type']
-    tags = body['tags']
+    # Retrieves queries information
+    urls         = body[ 'url']
+    quested_tags = body['tags']
+    actions_type = body['type']
     
+    # Process url by url accordingly 
     for url in urls:
         response = dynamodb.scan(
-            TableName = DB_NAME,
-            FilterExpression='ThumbnailURL = :val',
-            ExpressionAttributeValues={':val': {'S': url}}
+            TableName                = DB_NAME,
+            FilterExpression         = 'ThumbnailURL = :val',
+            ExpressionAttributeValues= {':val': {'S': url}}
         )
         
         items = response['Items']
         if not items:
             continue
         
-        item = items[0]
-        current_tags = json.loads(item['Tags']['S'])
+        item      = items[0]
+        curr_tags = json.loads(item['Tags']['S'])
         
-        if action_type == 1:  # Add tags
-            for tag in tags:
-                current_tags.append(tag)
-        elif action_type == 0:  # Remove tags
-            current_tags = [tag for tag in current_tags if tag not in tags]
+        # Adding tags or removing based on action type 
+        if actions_type   == 1:  
+            for tag in quested_tags:
+                curr_tags.append(tag)
+        elif actions_type == 0:  
+            curr_tags = [tag for tag in curr_tags if tag not in quested_tags]
         
+        # Updates DynamoDB with new tags provided 
         dynamodb.update_item(
             TableName = DB_NAME,
-            Key={'ImageKey': item['ImageKey']},
-            UpdateExpression='SET Tags = :val',
-            ExpressionAttributeValues={':val': {'S': json.dumps(current_tags)}}
+            Key       = {'ImageKey': item['ImageKey']},
+            UpdateExpression          = 'SET Tags = :val',
+            ExpressionAttributeValues = {':val': {'S': json.dumps(curr_tags)}}
         )
     
     return {

@@ -1,4 +1,4 @@
-# import the necessary packages
+# Import as library for Find Similar Images request
 import os
 import cv2
 import sys

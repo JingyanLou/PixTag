@@ -2,21 +2,21 @@ import json
 import boto3
 
 dynamodb = boto3.client('dynamodb')
-DB_NAME = 'ImageLabels'
+DB_NAME  = 'ImageLabels'
 
 def lambda_handler(event, context):
-    print("Received event:", event)  # Log the event for debugging
-    
+    # Receiving the thumbnail URL
     if isinstance(event['body'], str):
         body = json.loads(event['body'])
     else:
         body = event['body']
-    
     thumbnail_url = body.get('thumbnail_url')
+    
+    # Ask for thumbnail URL if not present 
     if not thumbnail_url:
         return {
             'statusCode': 400,
-            'body': json.dumps({'error': 'Thumbnail URL is required'}),
+            'body': json.dumps({'error': 'Please enter Thumbnail URL'}),
             'headers': {
                 'Content-Type': 'application/json',
                 'Access-Control-Allow-Origin': '*'
@@ -24,15 +24,16 @@ def lambda_handler(event, context):
         }
     
     try:
-        response = dynamodb.scan(
-            TableName=DB_NAME,
-            FilterExpression='ThumbnailURL = :val',
-            ExpressionAttributeValues={':val': {'S': thumbnail_url}}
+        # Extracting values from DynamoDB
+        response      = dynamodb.scan(
+            TableName = DB_NAME,
+            FilterExpression          = 'ThumbnailURL = :val',
+            ExpressionAttributeValues = {':val': {'S': thumbnail_url}}
         )
         
         items = response.get('Items', [])
-        print("DynamoDB scan response:", items)  # Log the DynamoDB response for debugging
         
+        # Retrieving corresponding full S3 image URL
         if items:
             fullsize_url = items[0]['S3ImageURL']['S']
             print("Full size URL: ",fullsize_url)
@@ -44,6 +45,7 @@ def lambda_handler(event, context):
                     'Access-Control-Allow-Origin': '*'
                 }
             }
+        # Else returns a 404 message if URL not found 
         else:
             return {
                 'statusCode': 404,
@@ -53,8 +55,9 @@ def lambda_handler(event, context):
                     'Access-Control-Allow-Origin': '*'
                 }
             }
+            
     except Exception as e:
-        print("Error querying DynamoDB:", e)  # Log the exception for debugging
+        print("Error:", e)  # Log the exception for debugging
         return {
             'statusCode': 500,
             'body': json.dumps({'error': 'Internal server error'}),
