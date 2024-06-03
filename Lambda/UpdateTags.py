@@ -60,8 +60,7 @@ def lambda_handler(event, context):
         
         if action_type == 1:  # Add tags
             for tag in tags:
-                if tag not in current_tags:
-                    current_tags.append(tag)
+                current_tags.append(tag)
         elif action_type == 0:  # Remove tags
             current_tags = [tag for tag in current_tags if tag not in tags]
         

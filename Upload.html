@@ -87,7 +87,7 @@
             text-align: center;
         }
     </style>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1004.0.min.js">
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
             const authToken = sessionStorage.getItem('authToken');
             if (!authToken) {
@@ -95,6 +95,7 @@
             }
         });
     </script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1004.0.min.js"></script>
 </head>
 
 <body>
