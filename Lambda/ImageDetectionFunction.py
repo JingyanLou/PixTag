@@ -84,6 +84,7 @@ dynamodb = boto3.client('dynamodb')
 sns = boto3.client('sns')
 TOPIC_ARN = "arn:aws:sns:us-east-1:261491978824:Tag" # enter your sns topic arn here 
 
+# We use ChatGPT to help achieve this feature.
 def lambda_handler(event, context):
     detection_results = []
     start_time = time.time()

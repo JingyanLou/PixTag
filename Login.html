@@ -88,45 +88,56 @@
     </div>
 
     <script>
+        // Function to log in a user. We use ChatGPT to help achieve this feature.
         async function loginUser() {
+            // Get the values from the input fields
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
 
             const messageDiv = document.getElementById('message');
-            messageDiv.textContent = "Logging in...";
+            messageDiv.textContent = "Logging in..."; // Display a message indicating the login process has started
 
             try {
+                // Make a POST request to the login API endpoint
                 const response = await fetch('https://wl6poops2l.execute-api.us-east-1.amazonaws.com/prod/api/login', {
-                    method: 'POST',
+                    method: 'POST', // Set the HTTP method to POST
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json' // Set the content type to JSON
                     },
-                    body: JSON.stringify({ username: email, password })
+                    body: JSON.stringify({ username: email, password }) // Include the email and password in the request body
                 });
 
+                // Parse the response from the server
                 const responseData = await response.json();
-                const body = JSON.parse(responseData.body);
+                const body = JSON.parse(responseData.body); // Parse the body of the response
 
+                // Check if the response status code indicates success
                 if (responseData.statusCode === 200) {
-                    messageDiv.textContent = body.message;
+                    messageDiv.textContent = body.message; // Display the success message
+                    // Redirect to the upload page after a short delay
                     setTimeout(() => {
-                        sessionStorage.setItem('authToken', body.token);
-                        sessionStorage.setItem('username', email); // Store username in sessionStorage
-                        window.location.href = '/upload.html';
+                        sessionStorage.setItem('authToken', body.token); // Store the authentication token in sessionStorage
+                        sessionStorage.setItem('username', email); // Store the username in sessionStorage
+                        window.location.href = '/upload.html'; // Redirect to upload.html
                     }, 1000);
                 } else if (responseData.statusCode === 401) {
+                    // Display an error message for unauthorized access
                     messageDiv.textContent = body.error;
                 } else if (responseData.statusCode === 403) {
+                    // Display an error message for forbidden access
                     messageDiv.textContent = body.error;
                 } else {
+                    // Throw an error for any other unsuccessful status code
                     throw new Error(responseData.error || 'Login failed');
                 }
             } catch (error) {
+                // Log any errors to the console and display a generic error message
                 console.error('Error logging in:', error);
                 messageDiv.textContent = "Login failed. Please try again.";
             }
         }
     </script>
+
 </body>
 
 </html>
