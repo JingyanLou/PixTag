@@ -30,7 +30,7 @@ Here is the system diagram:
 ![WechatIMG155](https://github.com/JingyanLou/PixTag/assets/92469426/6130b116-a752-4749-a46a-54118e12d7c7)
 
 ### Registeration
-![WechatIMG156](https://github.com/JingyanLou/PixTag/assets/92469426/42e1a8d4-7998-4b34-8300-0e3029dee8a8
+![WechatIMG156](https://github.com/JingyanLou/PixTag/assets/92469426/42e1a8d4-7998-4b34-8300-0e3029dee8a8)
 
 ### Upload image
 ![WechatIMG157](https://github.com/JingyanLou/PixTag/assets/92469426/beedd202-6082-4f09-82d8-a04f347111f7)
