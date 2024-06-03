@@ -210,7 +210,9 @@
 
     <script>
         document.getElementById("defaultOpen").click();
-        
+
+        // The constructive code of HTML page is refined, debugged and modified by chatGPT. 
+        // To present search page in more constructive block form 
         function openTab(evt, tabName) {
             var i, tabcontent, tablinks;
             tabcontent = document.getElementsByClassName("tabcontent");
@@ -225,6 +227,7 @@
             evt.currentTarget.className += " active";
         }
 
+        // Queries 3.3.1 Searching images by tags
         async function searchImages() {
             const query = document.getElementById('searchQuery').value;
             const username = sessionStorage.getItem('username');  // Retrieve username from session storage
@@ -254,6 +257,7 @@
                 const data = JSON.parse(responseData.body);
                 console.log(data); // Log the parsed data for debugging
 
+                // Display responded thumbnail images and links 
                 if (data.links) {
                     displayThumbnails(data.links);
                     displayThumbnailLinks(data.links);
@@ -267,6 +271,8 @@
             }
         }
 
+
+        // Queries 3.3.2. Searching full images through thumbnail url 
         async function findFullsizeImage() {
             const thumbnailUrl = document.getElementById('thumbnailUrl').value;
             const username = sessionStorage.getItem('username');  // Retrieve username from session storage
@@ -295,7 +301,8 @@
                 // Since responseData.body is a JSON string, parse it again
                 const data = JSON.parse(responseData.body);
                 console.log(data); // Log the parsed data for debugging
-
+                
+                // Display full image and its link
                 if (data.fullsize_url) {
                     displayFullsizeImage(data.fullsize_url);
                     displayFullsizeLink(data.fullsize_url);
@@ -309,6 +316,7 @@
             }
         }
 
+        // Convert uploaded image in base64 format. 
         async function toBase64(file) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -318,6 +326,7 @@
             });
         }
 
+        // Queries 3.3.3 Finding similar images  
         async function findSimilarImages() {
             const fileInput = document.getElementById('similarImageInput');
             const file = fileInput.files[0];
@@ -374,6 +383,7 @@
             }
         }
 
+        // For Queries 3.3.3. displaying similar images' thumbnail from image uploaded 
         function displaySimilarThumbnails(links) {
             const similarThumbnailsDiv = document.getElementById('similarThumbnails');
             similarThumbnailsDiv.innerHTML = '';
@@ -390,6 +400,7 @@
             }
         }
 
+        // Displaying thumbnail images from S3 bucket
         function displayThumbnails(links) {
             const thumbnailsDiv = document.getElementById('thumbnails');
             thumbnailsDiv.innerHTML = '';
@@ -403,6 +414,7 @@
             });
         }
 
+        // Displaying thumbnail links 
         function displayThumbnailLinks(links) {
             const thumbnailLinksDiv = document.getElementById('thumbnailLinks');
             thumbnailLinksDiv.innerHTML = '<strong>Thumbnail Links:</strong>';
@@ -415,6 +427,7 @@
             });
         }
 
+        // Displaying full size images
         function displayFullsizeImage(fullsizeUrl) {
             const fullsizeImage = document.getElementById('fullsizeImage');
             fullsizeImage.src = fullsizeUrl;
@@ -422,6 +435,7 @@
             fullsizeImage.onerror = () => console.error('Failed to load full-size image:', fullsizeImage.src);
         }
 
+        // Displaying full size images from S3 bucket 
         function displayFullsizeLink(fullsizeUrl) {
             const fullsizeLinkDiv = document.getElementById('fullsizeLink');
             fullsizeLinkDiv.innerHTML = '<strong>Fullsize Image Link:</strong>';
@@ -432,6 +446,7 @@
             fullsizeLinkDiv.appendChild(a);
         }
 
+        // log out function 
         function logoutUser() {
         sessionStorage.removeItem('authToken');
         sessionStorage.removeItem('username');
