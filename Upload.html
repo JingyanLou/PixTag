@@ -87,7 +87,14 @@
             text-align: center;
         }
     </style>
-    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1004.0.min.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1004.0.min.js">
+        document.addEventListener('DOMContentLoaded', function () {
+            const authToken = sessionStorage.getItem('authToken');
+            if (!authToken) {
+                window.location.href = '/login.html'; // Redirect to login page if not authenticated
+            }
+        });
+    </script>
 </head>
 
 <body>
@@ -96,7 +103,7 @@
         <a href="/update.html">Update</a>
         <a href="/search.html">Search</a>
         <a href="/Subscription.html">Subscribe</a>
-        <a href="/login.html">Logout</a>
+        <a href="#" onclick="logoutUser()">Logout</a>
     </div>
 
     <div class="content">
@@ -187,6 +194,12 @@
                 console.error('An error occurred while uploading the image:', error);
                 alert('An error occurred while uploading the image.');
             }
+        }
+
+        function logoutUser() {
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('username');
+            window.location.href = '/login.html';
         }
     </script>
 </body>
