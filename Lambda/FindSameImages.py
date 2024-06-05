@@ -8,7 +8,6 @@ dynamodb = boto3.client('dynamodb')
 def lambda_handler(event, context):
     try:
         print("Received event:", json.dumps(event))  # Log the received event
-
         # Ensure the body exists in the event
         if 'body' not in event:
             raise ValueError("Missing 'body' from event")
@@ -17,7 +16,7 @@ def lambda_handler(event, context):
 
         # Check if the body is a string or dict
         body_str = event['body'] if isinstance(event['body'], str) else json.dumps(event['body'])
-        body = json.loads(body_str)
+        body     = json.loads(body_str)
         print("Parsed body:", body)  # Log the parsed body
 
         # Ensure required fields are present in the body
@@ -25,9 +24,9 @@ def lambda_handler(event, context):
             raise ValueError("Missing required fields in body")
 
         base64_image = body['file']
-        username = body['username']
+        username     = body['username']
         print('Base64 image:', base64_image)
-        print('Username:', username)
+        print('Username:',         username)
 
         # Detect objects in the image
         detected_object = json.loads(obj_detect(base64_image))
@@ -36,20 +35,20 @@ def lambda_handler(event, context):
 
         # Scan DynamoDB for images with matching tags
         matching_images = []
-        response = dynamodb.scan(
-            TableName=DB_NAME,
-            FilterExpression='UserName = :username',
-            ExpressionAttributeValues={':username': {'S': username}}
+        response        = dynamodb.scan(
+            TableName   = DB_NAME,
+            FilterExpression          = 'UserName = :username',
+            ExpressionAttributeValues = {':username': {'S': username}}
         )
-        print("DynamoDB scan response:", json.dumps(response))  # Log the DynamoDB response
+        print("DynamoDB scan response:", json.dumps(response))     # Log the DynamoDB response
 
         # Scan through all images such containing all of the tags from sent images
         for item in response['Items']:
-            tags = set(json.loads(item['Tags']['S']))  # Load the tags and convert to a set
-            if detected_labels.issubset(tags):  # Check if all detected labels are in the tags
+            tags = set(json.loads(item['Tags']['S']))              # Load the tags and convert to a set
+            if detected_labels.issubset(tags):                     # Check if all detected labels are in the tags
                 matching_images.append(item['ThumbnailURL']['S'])  # Append the thumbnail URL if all labels match
 
-        print("Matching images:", matching_images)  # Log the matching images
+        print("Matching images:", matching_images)                 # Log the matching images
 
         if matching_images:
             return {

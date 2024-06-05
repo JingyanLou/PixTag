@@ -17,7 +17,7 @@ def lambda_handler(event, context):
             else:
                 body = body
         else:
-            body = event  # In case the event is already a dictionary and not string-encoded
+            body = event                 # In case the event is already a dictionary and not string-encoded
         
         urls = body.get('url', [])
         username = body.get('username')  # Add username to the request payload
@@ -39,24 +39,26 @@ def lambda_handler(event, context):
                 # Find the item in DynamoDB
                 response = dynamodb.scan(
                     TableName=DB_NAME,
-                    FilterExpression='ThumbnailURL = :val',
-                    ExpressionAttributeValues={':val': {'S': url}}
+                    FilterExpression         = 'ThumbnailURL = :val',
+                    ExpressionAttributeValues= {':val': {'S': url}}
                 )
                 
+                # Reports if image not found 
                 items = response.get('Items', [])
                 if not items:
                     print(f"No item found in DynamoDB for URL: {url}")
                     continue
                 
-                item = items[0]
+                item          = items[0]
                 item_username = item['UserName']['S']
                 
+                # To extract list of image urls that user not authorized to delete  
                 if item_username != username:
                     print(f"User {username} is not authorized to delete image uploaded by {item_username}")
                     unauthorized_urls.append(url)
                     continue
 
-                image_key = item['ImageKey']['S']
+                image_key     = item['ImageKey']['S']
                 s3_image_path = item['S3ImagePath']['S']
                 thumbnail_url = item['ThumbnailURL']['S']
                 print('s3_image_path : ', s3_image_path)
@@ -96,6 +98,7 @@ def lambda_handler(event, context):
                 print(f"Error processing URL {url}: {e}")
                 continue
         
+        # Return messages 
         if deleted_any:
             if len(unauthorized_urls) < len(urls) and len(unauthorized_urls) != 0:
                 message = f'Images deleted successfully, but user {username} is not authorized to delete the following URLs: {unauthorized_urls}'
